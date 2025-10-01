@@ -379,12 +379,12 @@
     }
 
 
-    var mundomaniacoeuforico;
+    var mundoManiacoEuforico;
     var sprites = [];
 
     window.addEventListener('load', function () {
 
-      mundomaniacoeuforico = new Earth('mme', {
+      mundoManiacoEuforico = new Earth('mme', {
 
         location: { lat: 20, lng: 20 },
 
@@ -394,24 +394,23 @@
         transparent: true,
 
         autoRotate: true,
-        autoRotateSpeed: 1.2,
+        autoRotateSpeed: 1.4,
         autoRotateDelay: 100,
         autoRotateStart: 2000,
 
       });
 
-
-      mundomaniacoeuforico.addEventListener("ready", function () {
-
+      mundoManiacoEuforico.addEventListener("ready", function () {
         this.startAutoRotate();
 
         // linhas imaginárias de conexão
 
         var line = {
-          color: '#009CFF',
-          opacity: 0.35,
+          color: "cyan", // '#009CFF',
+          opacity: 1, // 0.35,
           hairline: true,
           offset: -0.5
+
         };
 
         for (var i in connections) {
@@ -623,14 +622,18 @@
       max-height: 100vw;
       transform: translate(-50%, -50%);
 
-      background: radial-gradient(ellipse at center, rgba(0, 156, 255, 0.05) 25%, rgba(0, 156, 255, 0.15) 53%, rgba(0, 156, 255, 0.05) 56%, rgba(0, 156, 255, 0) 70%);
+      background: radial-gradient(ellipse at center, rgba(0, 156, 255, 0.05) 25%, rgba(0, 156, 255, 0.15) 53%, rgba(0, 156, 255, 0.05) 56%, rgba(0, 156, 255, 0) 20%);
       z-index: 200;
       pointer-events: none;
     } -->
   </style>
   <style>
-    body,
-    html {
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
       height: 100%;
     }
 
@@ -640,8 +643,9 @@
 
     #mapa {
       /* Lente de Arco-íris, fora da atmosfera */
-      background: radial-gradient(circle,
-          hsla(0, 100%, 50%, 70%), hsla(39, 100%, 50%, 70%), hsla(60, 100%, 50%, 70%), hsla(120, 100%, 25%, 70%), hsla(240, 100%, 50%, 70%), hsla(275, 100%, 25%, 70%), hsla(300, 76%, 72%, 70%));
+      background-image: radial-gradient(circle,
+          hsla(0, 100%, 50%, 40%), hsla(39, 100%, 50%, 40%), hsla(60, 100%, 50%, 40%), hsla(120, 100%, 25%, 40%), hsla(240, 100%, 50%, 40%), hsla(275, 100%, 25%, 40%), hsla(300, 76%, 72%, 40%));
+      background-color: rgba(0, 0, 0, 1);
       width: 100%;
       height: 100%;
     }
@@ -653,7 +657,7 @@
       font-weight: 600;
       font-style: normal;
       letter-spacing: 1dvw;
-
+      font-size: xx-large;
       border: 1px groove black;
       background-color: black;
       color: white;
@@ -671,11 +675,31 @@
       font-family: monospace;
       letter-spacing: normal;
       color: gray;
+      font-size: large;
     }
 
     footer {
       width: 100%;
       text-align: center;
+    }
+
+    #mapa+span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      left: 1.5rem;
+      top: 1.5rem;
+      cursor: pointer;
+      user-select: none;
+      font-size: 1.5rem;
+      color: white;
+      font-family: serif;
+      width: 3rem;
+      height: 3rem;
+      border: 3px solid hsla(180, 100%, 50%, 35%);
+      border-radius: 100%;
+      z-index: 10000;
     }
   </style>
 
@@ -683,83 +707,125 @@
 
 <body>
   <section id="mme" class="earth-container earth-ready">
-    <canvas id="mapa" width="1920" height="1080"></canvas>
+    <canvas id="mapa" width="1920" height="1080" style="max-height: 100%"></canvas>
+    <span>?</span>
   </section>
-  <div id="relogio" title="Geralmente atualizado a cada 30 segundos" />
 
   <script>
     window.addEventListener("DOMContentLoaded", function () {
+      // Sem necessidade de rolar a página para ver parallax no celular
+      var noCelular;
+      if (noCelular = navigator.userAgentData && navigator.userAgentData.mobile || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768) {
+        window.getComputedStyle(document.querySelector(".earth-container"), "::before");
+        const style = document.createElement("style");
+        style.textContent = ".earth-container::before { padding-top: unset; }";
+        document.head.appendChild(style);
+
+      } else {
+        Object.assign(document.querySelector("span").style, { display: "none" })
+
+      }
+
+      // Filtros ao rolar e posição do relógio
       var tela = document.body.getElementsByClassName("earth-container")[0];
       var agendado;
       window.addEventListener("scroll", () => {
         if (!agendado) {
           agendado = setTimeout(() => {
-            const pontoRolagemPretoEBranco = tela.offsetHeight * 1.25;
-            const pontoFinalRolagemSepia = tela.offsetHeight * 1.125;
+            const pontoRolagemEscalaDeCinza = (document.body.scrollHeight * 2 - tela.offsetHeight) / 2;
+            const pontoFinalRolagemSepia = document.body.scrollHeight - (document.body.scrollHeight - pontoRolagemEscalaDeCinza) / 2;
 
             if (window.scrollY > tela.offsetHeight) {
-              const margemSepia = window.scrollY - tela.offsetHeight;
-              const sepia = pontoRolagemPretoEBranco / (margemSepia * 100);
-              var porcentagemSepia = Number.parseInt(Math.abs(Math.min(sepia * 100, 100) - 100)) / 100;
+              const rolagem = Math.round(window.scrollY + tela.offsetHeight);
+              if (rolagem < pontoRolagemEscalaDeCinza) porcentagemCinza = 0;
 
-              Object.assign(tela.style, { filter: `sepia(${porcentagemSepia})` })
-              Object.assign(relogio.style, { filter: `sepia(${porcentagemSepia})` })
-            } else if (window.scrollY > pontoRolagemPretoEBranco) {
-              const aindaHaMargemSepia = pontoFinalRolagemSepia <= window.scrollY;
-              const margemPretoEBranco = window.scrollY - pontoRolagemPretoEBranco;
-              const cinza = document.body.offsetHeight / (margemPretoEBranco * 100);
-              var porcentagemCinza = Number.parseInt(Math.abs(Math.min(cinza * 100, 100) - 100)) / 100;
+              if (rolagem <= pontoFinalRolagemSepia) {
+                const margemSepia = window.scrollY - tela.offsetHeight;
+                const sepia = (pontoRolagemEscalaDeCinza / (margemSepia * 100));
+                var porcentagemSepia = Number.parseInt(Math.abs(Math.min(sepia * 100, 100) - 100));
 
-              Object.assign(tela.style, { filter: `grayscale(${porcentagemCinza}) ${aindaHaMargemSepia ? `sepia(${porcentagemSepia})` : ""}` })
-              Object.assign(relogio.style, { filter: `grayscale(${porcentagemCinza}) ${aindaHaMargemSepia ? `sepia(${porcentagemSepia})` : ""}` })
+                if (!porcentagemCinza) {
+                  Object.assign(tela.style, { filter: `sepia(${porcentagemSepia / 100})` })
+                  Object.assign(relogio.style, { filter: `sepia(${porcentagemSepia / 100})` })
+                }
+              } else {
+                porcentagemSepia = 0;
+              }
+              if (rolagem > pontoRolagemEscalaDeCinza) {
+
+                const margemCinza = window.scrollY - pontoRolagemEscalaDeCinza;
+                const cinza = (document.body.scrollHeight / (margemCinza * 100));
+                var porcentagemCinza = Number.parseInt(Math.abs(Math.min(cinza * 100, 100) - 100));
+
+                Object.assign(tela.style, { filter: `${porcentagemSepia ? `sepia(${porcentagemSepia / 100}) ` : ""}grayscale(${porcentagemCinza / 100})` })
+                Object.assign(relogio.style, { filter: `${porcentagemSepia ? `sepia(${porcentagemSepia / 100}) ` : ""}grayscale(${porcentagemCinza / 100})` })
+              }
             } else {
-              Object.assign(tela.style, { filter: undefined });
+              porcentagemSepia = 0;
+              porcentagemCinza = 0;
+              Object.assign(tela.style, { filter: "" });
             }
-            if (window.scrollY > document.body.offsetHeight) {
-              Object.assign(relogio.style, { transform: `translateY(${window.scrollY - document.body.offsetHeight}px)` })
+
+            if (window.scrollY >= tela.offsetHeight) {
+              Object.assign(relogio.style, { transform: `translateY(${window.scrollY - tela.offsetHeight}px)` })
             } else {
               Object.assign(relogio.style, {
-                top: "100%",
-                filter: undefined,
-                transform: undefined
+                top: `${tela.offsetHeight}px`,
+                filter: "",
+                transform: "translateY(0)"
               })
             }
 
             agendado = null;
           }, 1)
         }
-      });
+      }, {});
 
-      // 1 bilhão de anos em milissegundos
-      const bilhaoAnos = 1e9; // 1 bilhão
+      // Contador do relógio
+      const bilhaoAnos = 1e9; // 1 bilhão de anos em milissegundos
       const msEmUmAno = 365.25 * 24 * 60 * 60 * 1000; // Considera anos bissextos
       const tempoAteHidrogenioDoSolAcabar = 5 * bilhaoAnos * msEmUmAno;
-
       var fimDosTempos = Date.now() + tempoAteHidrogenioDoSolAcabar;
-      var relogio = document.getElementById("relogio");
-      var tempo = document.createElement("time");
       var hora = new Date();
-      tempo.dateTime = `${hora.toISOString().split("T")[0]} ${hora.toLocaleTimeString().slice(0, 5)}`;
-      tempo.textContent = hora.toLocaleString() + hora.toString().split(hora.toLocaleTimeString())[1];
+      var horarioTexto = `${hora.toISOString().split("T")[0]} ${hora.toLocaleTimeString().slice(0, 5)}`;
+      var tempoRestanteAtualizado = fimDosTempos + "\n";
+      var horarioPorExtenso = hora.toLocaleString() + hora.toString().split(hora.toLocaleTimeString())[1];
 
-      relogio.textContent = fimDosTempos + "\n";
-      relogio.appendChild(tempo);
+      if (!noCelular) {
+        var relogio = document.createElement("div");
+        relogio.id = "relogio";
+        relogio.title = "Geralmente atualizado a cada 30 segundos";
+        var tempo = document.createElement("time");
+        tempo.dateTime = horarioTexto;
+        tempo.textContent = horarioPorExtenso;
+        relogio.textContent = tempoRestanteAtualizado;
+        relogio.appendChild(tempo);
+        document.body.appendChild(relogio);
+      }
 
       /**
       * @param {number} estampaDeTempo 
       */
       function atualizarContador(estampaDeTempo) {
         if (!fimDosTempos) fimDosTempos = estampaDeTempo;
-        const tempoRestante = relogio.textContent.split("\n")[0]
+        const tempoRestante = tempoRestanteAtualizado.split("\n")[0]
         const decorrido = tempoRestante - estampaDeTempo;
 
-        relogio.textContent = `${fimDosTempos - Math.floor(tempoRestante - decorrido)}\n`;
-        relogio.appendChild(tempo); // data da página
+        tempoRestanteAtualizado = `${fimDosTempos - Math.floor(tempoRestante - decorrido)}\n`;
+
+        if (!noCelular) {
+          relogio.textContent = tempoRestanteAtualizado;
+          relogio.appendChild(tempo); // data da página
+        }
 
         window.requestAnimationFrame(atualizarContador);
       }
 
       window.requestAnimationFrame(atualizarContador);
+      var info = document.querySelector("span");
+      info.addEventListener("click", function () {
+        window.alert(tempoRestanteAtualizado + horarioPorExtenso + "\nGeralmente atualizado a cada 30 segundos")
+      })
     })
   </script>
 </body>
